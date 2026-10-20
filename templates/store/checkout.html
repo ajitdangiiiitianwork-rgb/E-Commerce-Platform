@@ -8,14 +8,15 @@
 
 <section class="section-content padding-y bg">
 <div class="container">
-
+<form action="" method="POST">
+{% csrf_token %}
 <!-- ============================ COMPONENT 1 ================================= -->
 <div class="row">
 	<aside class="col-lg-6">
 <div class="card">
 	<div class="card-body">
 		<h4 class="card-title mb-4">Billing Address</h4>
-		<form action="">
+		
 			<div class="form-row">
 				<div class="col form-group col-md-6">
 					<label for="">First Name</label>
@@ -74,7 +75,6 @@
 					<textarea name="order_note" rows="2" class="form-control" required></textarea>
 				</div>
 			</div>
-		</form>
 	</div>
 </div> <!-- card.// -->
 
@@ -122,7 +122,8 @@
 				{% endfor %}
 				</tbody>
 				</table>
-			<a href="./place-order.html" class="btn btn-primary btn-block"> Checkout </a>
+
+			<button type="submit" class="btn btn-primary btn-block">Place Order</button>
 			<a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
 		</div> <!-- card-body.// -->
 		</div> <!-- card.// -->
@@ -133,7 +134,7 @@
 </div> <!-- row.// -->
 
 <!-- ============================ COMPONENT 1 END .// ================================= -->
-
+</form>
 </div> <!-- container .//  -->
 </section>
 <!-- ========================= SECTION CONTENT END// ========================= -->

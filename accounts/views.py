@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import RegistrationForm
 from .models import Account
+from carts.models import Cart, CartItem
+from carts.views import _cart_id
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 
@@ -12,6 +14,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
+import requests
 
 def register(request):
   if request.method =='POST':
@@ -59,9 +62,62 @@ def login(request):
     user  = auth.authenticate(email=email, password=password)
 
     if user is not None:
+      try:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        is_cart_item_exists = CartItem.objects.filter(cart=cart).exists()
+        if is_cart_item_exists:
+          cart_item = CartItem.objects.filter(cart=cart)
+          product_variation = []
+
+          for item in cart_item:
+            variation = item.variations.all()
+            product_variation.append(list(variation))
+
+          cart_item = CartItem.objects.filter(user=user)
+          ex_variation_list = []
+          id = []
+    
+          for item in cart_item:
+            existing_vairation = item.variations.all()
+            ex_variation_list.append(list(existing_vairation))
+            id.append(item.id)
+
+          for pr in product_variation:
+            if pr in ex_variation_list:
+              index = ex_variation_list.index(pr)
+              item_id = id[index]
+              item = CartItem.objects.get(id=item_id)
+              item.quantity += 1
+              item.user = user
+              item.save()
+              CartItem.objects.filter(cart=cart).delete()
+            else:
+              cart_item = CartItem.objects.filter(cart=cart)
+              for item in cart_item:
+                item.user = user
+                item.save()
+
+      except Exception as e:
+        print(e)
+        pass
+
       auth.login(request, user)  # If i dont use then csrf verificaction fails
       messages.success(request, "You are logged in succesfully")
-      return redirect('dashboard')
+      url = request.META.get('HTTP_REFERER')
+      try:
+        query = requests.utils.urlparse(url).query
+        # print('query -> ' , query)
+        # print('-------------')
+        # next=cart/checkout/
+        params = dict(x.split('=') for x in query.split('&'))
+        # print('params -> ' , params)
+        if 'next' in params:
+          nextPage = params['next']
+          return redirect(nextPage)
+        
+      except:
+        return redirect('dashboard')
+      
     else:
       messages.error(request, "Invalid login credentials!")
       return redirect('login')
